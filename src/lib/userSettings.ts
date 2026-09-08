@@ -34,6 +34,8 @@ export interface UpdateSettings {
   channel: 'stable' | 'beta' | 'nightly';
   githubOwner?: string;
   repoPrefix?: string;
+  enableLiveWebShell?: boolean;
+  liveWebUrl?: string;
 }
 
 export interface UserSettings {
@@ -205,6 +207,8 @@ export const DEFAULT_UPDATE_SETTINGS: UpdateSettings = {
   channel: 'stable',
   githubOwner: 'Simlfe',
   repoPrefix: 'sirverchats',
+  enableLiveWebShell: true,
+  liveWebUrl: 'https://app.sirverdata.top',
 };
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {

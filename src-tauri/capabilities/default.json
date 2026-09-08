@@ -5,6 +5,12 @@
   "windows": [
     "main"
   ],
+  "remote": {
+    "urls": [
+      "https://app.sirverdata.top",
+      "https://app.sirverdata.top/*"
+    ]
+  },
   "permissions": [
     "core:default",
     "core:window:allow-minimize",

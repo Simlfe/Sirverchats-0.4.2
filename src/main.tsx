@@ -4,7 +4,15 @@ import App from './App.tsx';
 import ErrorBoundary from './components/ErrorBoundary.tsx';
 import { ThemeProvider } from './context/ThemeContext.tsx';
 import { MediaProvider } from './context/MediaContext.tsx';
+import { liveShellService } from './services/liveShellService.ts';
 import './index.css';
+
+// Initialize Live Web Shell for native desktop clients
+if (typeof window !== 'undefined') {
+  liveShellService.init().catch((err) => {
+    console.warn('[LiveShell] Init warning:', err);
+  });
+}
 
 // Disable console logs in production builds
 if (typeof window !== 'undefined' && (import.meta as any).env?.PROD) {

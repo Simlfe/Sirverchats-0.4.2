@@ -15,11 +15,13 @@ import {
   Zap,
   RotateCcw,
   GitBranch,
-  FolderGit2
+  FolderGit2,
+  Globe
 } from 'lucide-react';
 import { UserSettings, formatBytes } from '../lib/userSettings';
 import { updateService, UpdateState, CURRENT_APP_VERSION } from '../services/updateService';
 import { isTauriEnvironment } from '../lib/tauriDesktopService';
+import { liveShellService } from '../services/liveShellService';
 
 interface UpdatesTabContentProps {
   lang: 'en' | 'ar';
@@ -45,6 +47,43 @@ export default function UpdatesTabContent({
   }, []);
 
   const [isTestingDoubleCheck, setIsTestingDoubleCheck] = useState(false);
+  const [liveShellStatus, setLiveShellStatus] = useState(() => liveShellService.getStatus());
+  const [isTestingLiveShell, setIsTestingLiveShell] = useState(false);
+  const [liveShellFeedback, setLiveShellFeedback] = useState<{ success: boolean; message: string } | null>(null);
+
+  const handleTestLiveShell = async () => {
+    setIsTestingLiveShell(true);
+    setLiveShellFeedback(null);
+    try {
+      const url = userSettings.updates?.liveWebUrl || 'https://app.sirverdata.top';
+      liveShellService.setLiveUrl(url);
+      const res = await fetch(`${url}/versions.json?_t=${Date.now()}`, {
+        method: 'GET',
+        cache: 'no-store',
+        signal: AbortSignal.timeout(2500),
+      }).catch(() => null);
+
+      if (res && res.ok) {
+        setLiveShellFeedback({
+          success: true,
+          message: lang === 'ar' ? 'تم الاتصال بنجاح! خادم الويب المباشر جاهز ويعمل بنسخته الأحدث.' : 'Connected successfully! Live web server is active and serving the newest web build.',
+        });
+      } else {
+        setLiveShellFeedback({
+          success: false,
+          message: lang === 'ar' ? `تعذر الاتصال بخادم الويب (${res?.status || 'لا يوجد استجابة'}). التطبيق سيعمل بالنسخة المحلية المرفقة بأمان.` : `Could not reach live web server (${res?.status || 'No response'}). App will safely run local bundled version.`,
+        });
+      }
+    } catch (e: any) {
+      setLiveShellFeedback({
+        success: false,
+        message: lang === 'ar' ? 'فشل الاتصال بخادم الويب المباشر. تأكد من إعداد المسار وتوجيهه.' : 'Connection test failed. Verify web server path and Cloudflare routing.',
+      });
+    } finally {
+      setIsTestingLiveShell(false);
+      setLiveShellStatus(liveShellService.getStatus());
+    }
+  };
   const [doubleCheckFeedback, setDoubleCheckFeedback] = useState<{
     tested: boolean;
     repoFound: boolean;
@@ -518,6 +557,81 @@ export default function UpdatesTabContent({
               className="w-4 h-4 accent-accent rounded cursor-pointer shrink-0"
             />
           </label>
+        </div>
+      </div>
+
+      {/* Live Web Shell (Instant Zero-Download Updates for Desktop Apps) */}
+      <div className="p-5 rounded-2xl border bg-[var(--theme-bg-card)] border-[var(--theme-border)] space-y-4">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-black uppercase tracking-wider flex items-center gap-1.5 text-accent">
+            <Globe className="w-4 h-4" />
+            <span>{lang === 'ar' ? 'المزامنة المباشرة من الويب (تحديث فوري بدون تنزيل)' : 'Live Web Shell (Zero-Download Instant Updates)'}</span>
+          </label>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/25">
+            {liveShellStatus.isLiveWeb
+              ? (lang === 'ar' ? 'متصل بالويب المباشر' : 'Live Web Connected')
+              : liveShellStatus.isTauri
+              ? (lang === 'ar' ? 'نسخة محلية احتياطية' : 'Local Offline Standby')
+              : (lang === 'ar' ? 'متصفح ويب مباشر' : 'Web Browser')}
+          </span>
+        </div>
+
+        <p className="text-[11px] text-[var(--theme-text-muted)] leading-relaxed">
+          {lang === 'ar'
+            ? 'عند تفعيل هذه الميزة، يقوم تطبيق سطح المكتب (AppImage / Linux / Windows) بتحميل نسخة الويب المباشرة تلقائياً من النطاق المحدد. تظهر أي تحديثات فوراً لجميع المستخدمين بمجرد تحديث الموقع ودون الحاجة لتنزيل أي ملفات تثبيت جديدة!'
+            : 'When enabled, the desktop client (AppImage / Linux / Windows) automatically loads the live web application from your domain. All future app updates apply immediately to every user without compiling or downloading new binaries!'}
+        </p>
+
+        {/* Toggle Live Web Shell */}
+        <label className="flex items-center justify-between p-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg-tertiary)] cursor-pointer hover:bg-[var(--theme-bg-secondary)] transition-all">
+          <div className="space-y-0.5">
+            <span className="font-extrabold text-xs text-[var(--theme-text-primary)]">
+              {lang === 'ar' ? 'تفعيل غلاف الويب المباشر للتطبيقات المكتبية' : 'Enable Live Web Shell for Desktop Apps'}
+            </span>
+            <p className="text-[10px] text-[var(--theme-text-muted)]">
+              {lang === 'ar'
+                ? 'التبديل التلقائي إلى موقع الويب المباشر عند توفره، مع البقاء على النسخة المحلية في حال عدم الاتصال.'
+                : 'Automatically connects to live web app when reachable, safely falling back to local files offline.'}
+            </p>
+          </div>
+          <input
+            type="checkbox"
+            checked={userSettings.updates?.enableLiveWebShell ?? true}
+            onChange={(e) => updatePartialSettings('updates', { enableLiveWebShell: e.target.checked })}
+            className="w-4 h-4 accent-accent rounded cursor-pointer shrink-0"
+          />
+        </label>
+
+        {/* Domain input & test button */}
+        <div className="space-y-2">
+          <label className="text-[10px] font-bold text-[var(--theme-text-muted)] flex items-center gap-1">
+            <Globe className="w-3.5 h-3.5 text-accent" />
+            <span>{lang === 'ar' ? 'رابط خادم الويب المباشر (Live Web URL):' : 'Live Web App Domain / URL:'}</span>
+          </label>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="text"
+              value={userSettings.updates?.liveWebUrl || 'https://app.sirverdata.top'}
+              onChange={(e) => updatePartialSettings('updates', { liveWebUrl: e.target.value.trim() })}
+              placeholder="https://app.sirverdata.top"
+              className="flex-1 px-3 py-2 rounded-xl bg-[var(--theme-bg-tertiary)] border border-[var(--theme-border)] text-xs text-[var(--theme-text-primary)] font-mono focus:border-accent focus:outline-none"
+            />
+            <button
+              onClick={handleTestLiveShell}
+              disabled={isTestingLiveShell}
+              className="px-4 py-2 rounded-xl bg-accent hover:opacity-90 disabled:opacity-50 text-white font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer border-0 shrink-0"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isTestingLiveShell ? 'animate-spin' : ''}`} />
+              <span>{lang === 'ar' ? 'فحص الاتصال بخادم الويب' : 'Test Live Web Connection'}</span>
+            </button>
+          </div>
+
+          {liveShellFeedback && (
+            <div className={`p-3 rounded-xl border text-xs flex items-center gap-2 ${liveShellFeedback.success ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300' : 'bg-amber-500/15 border-amber-500/30 text-amber-300'}`}>
+              {liveShellFeedback.success ? <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" /> : <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />}
+              <span>{liveShellFeedback.message}</span>
+            </div>
+          )}
         </div>
       </div>
 

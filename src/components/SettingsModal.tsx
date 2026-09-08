@@ -96,7 +96,6 @@ import {
 } from '../theme/adminThemeService';
 import { getDownloadDirectory, openDownloadDirectory, getCustomDownloadDirSetting, setCustomDownloadDirSetting, ensureDownloadDirectoryExists } from '../lib/tauriDesktopService';
 import DownloadsTabContent from './DownloadsTabContent';
-import UpdatesTabContent from './UpdatesTabContent';
 import { useBackHandler } from '../services/backStackManager';
 
 const GlobalThemeManagerTab = React.lazy(() => import('./GlobalThemeManagerTab').then(m => ({ default: m.GlobalThemeManagerTab })));
@@ -139,7 +138,6 @@ type TabType =
   | 'privacy'
   | 'storage'
   | 'downloads'
-  | 'updates'
   | 'account'
   | 'admin_db'
   | 'global_theme';
@@ -1003,7 +1001,6 @@ export default function SettingsModal({
     { id: 'privacy', label: lang === 'ar' ? 'الخصوصية والأمان' : 'Privacy & Safety', icon: Shield },
     { id: 'storage', label: lang === 'ar' ? 'التخزين والبيانات' : 'Storage & Data', icon: Database },
     { id: 'downloads', label: lang === 'ar' ? 'التنزيلات والتنزيلات المحلية' : 'Downloads Manager', icon: Download },
-    { id: 'updates', label: lang === 'ar' ? 'التحديثات والتطويرات' : 'Updates & Releases', icon: RefreshCw },
     { id: 'account', label: lang === 'ar' ? 'الحساب والملف الشخصي' : 'Account', icon: UserIcon },
     ...(isAdmin
       ? [
@@ -4233,17 +4230,6 @@ export default function SettingsModal({
             {/* DOWNLOADS TAB */}
             {activeTab === 'downloads' && (
               <DownloadsTabContent lang={lang} isLight={isLight} />
-            )}
-
-            {/* UPDATES TAB */}
-            {activeTab === 'updates' && (
-              <UpdatesTabContent
-                lang={lang}
-                userSettings={localSettings}
-                onUpdateUserSettings={onUpdateUserSettings}
-                updatePartialSettings={updatePartialSettings}
-                isAdmin={isAdmin}
-              />
             )}
 
             {/* 8. ACCOUNT TAB */}

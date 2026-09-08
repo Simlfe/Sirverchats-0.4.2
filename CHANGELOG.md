@@ -1,15 +1,16 @@
 # Sirver Application Changelog
 
 ## [4.60.69] - 2026-09-08
-### Feature: Live Web Shell (Instant Zero-Download Updates for Desktop Apps)
+### Feature: Live Web Shell & Complete Updater UI Removal
 - **Native Live Web Shell Integration (`src/services/liveShellService.ts`, `src-tauri/capabilities/default.json`, `src/main.tsx`)**:
   - Implemented `LiveShellService` to allow desktop applications (Tauri, AppImage, Linux `.deb`, Windows `.exe`) to seamlessly load the live web application from `https://app.sirverdata.top`.
   - Added remote capability URL permissions in `src-tauri/capabilities/default.json` for `https://app.sirverdata.top` and `https://app.sirverdata.top/*`, allowing the live web application to invoke native desktop APIs (frameless window controls, tray, notifications, audio devices).
   - Implemented intelligent availability probing: At app startup, the desktop shell probes the remote endpoint with a fast timeout. If active, it smoothly transitions to the live web app; if offline, unreachable, or returning 404, it safely falls back to the bundled local client without interruption.
   - Implemented seamless session state handoff (`auth_handoff`) to preserve authenticated user state between local and remote environments.
-- **User Settings & Live Web Shell Controls (`src/lib/userSettings.ts`, `src/components/UpdatesTabContent.tsx`)**:
-  - Added `enableLiveWebShell` and `liveWebUrl` settings to `UpdateSettings` with defaults targeting `https://app.sirverdata.top`.
-  - Added configuration card and connection test tools inside the Updates tab.
+- **Removed Updater UI & Background Polling (`src/components/SettingsModal.tsx`, `src/App.tsx`)**:
+  - Completely removed the "Updates & Releases" tab from the Settings navigation and modal content.
+  - Removed all updater UI components: download banners, progress notifications, interrupted update popups, restart toasts, and mandatory update overlays.
+  - Disabled automatic background GitHub update polling in `App.tsx` on startup, shifting entirely to the continuous Live Web delivery model.
 
 ## [4.60.68] - 2026-09-08
 ### Root-Cause Fix: Linux WebKitGTK WebRTC Permissions, Audio Device Handling & Voice Channel Join Flow
